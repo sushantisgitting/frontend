@@ -1,208 +1,166 @@
 import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
-import { useNavigate, useParams } from "react-router-dom";
 
-const PageContainer = styled.div`
-  padding: 40px;
-  background-color: #f8f8f8;
-  min-height: calc(100vh - 60px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const FormContainer = styled.div`
-  background-color: white;
+const Container = styled.div`
+  max-width: 600px;
+  margin: 50px auto;
   padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  width: 500px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 `;
 
 const Title = styled.h2`
-  margin-bottom: 30px;
-  color: #333;
-  font-size: 2em;
   text-align: center;
+  margin-bottom: 20px;
+  color: #333;
 `;
 
-const FormGroup = styled.div`
-  margin-bottom: 20px;
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
 `;
 
 const Label = styled.label`
-  display: block;
   margin-bottom: 8px;
   color: #555;
-  font-weight: bold;
 `;
 
 const Input = styled.input`
-  width: 100%;
-  padding: 12px;
+  padding: 10px;
+  margin-bottom: 15px;
   border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1em;
+  border-radius: 4px;
+  font-size: 16px;
 `;
 
 const Button = styled.button`
+  padding: 12px 20px;
   background-color: #007bff;
   color: white;
-  padding: 12px 25px;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 1.1em;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
 
   &:hover {
     background-color: #0056b3;
   }
 `;
 
+const BackLink = styled(Link)`
+  display: block;
+  margin-top: 20px;
+  color: #007bff;
+  text-decoration: none;
+  text-align: center;
+
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: red;
+  margin-top: 10px;
+  text-align: center;
+`;
+
+const SuccessMessage = styled.div`
+  color: green;
+  margin-top: 10px;
+  text-align: center;
+`;
+
 const EditStudent = () => {
-  const { id } = useParams();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
-  const [student, setStudent] = useState({
-    studentId: "",
-    firstName: "",
-    lastName: "",
-    email: "",
-    department: "",
-    enrollmentYear: "",
-    dateOfBirth: "",
-    isActive: true,
-  });
-  const backendURL = "https://wt-assignment-2-3aes.onrender.com";
+  const { id } = useParams();
+  const backendURL = process.env.REACT_APP_BACKEND_URL; // Get the backend URL
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const fetchStudent = async () => {
-      try {
-        const response = await axios.get(`${backendURL}/api/students/${id}`);
-        setStudent(response.data);
-      } catch (error) {
-        console.error("Error fetching student for edit:", error);
-        // Optionally display an error message to the user
-      }
-    };
-
     fetchStudent();
-  }, [id, backendURL]);
+  }, [id]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setStudent((prevStudent) => ({
-      ...prevStudent,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+  const fetchStudent = async () => {
+    try {
+      const response = await axios.get(`${backendURL}/api/students/${id}`); // Use the environment variable
+      const { name, email, phone } = response.data;
+      setName(name);
+      setEmail(email);
+      setPhone(phone);
+    } catch (error) {
+      setErrorMessage("Error fetching student details.");
+      console.error("Error fetching student:", error);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({});
+    setSuccessMessage("");
+
+    const updatedStudent = { name, email, phone };
+
     try {
-      await axios.patch(`${backendURL}/api/students/${id}`, student);
-      navigate("/students");
+      await axios.put(`${backendURL}/api/students/${id}`, updatedStudent); // Use the environment variable
+      setSuccessMessage("Student updated successfully!");
+      setTimeout(() => navigate("/students"), 1500);
     } catch (error) {
-      console.error("Error updating student:", error);
-      // Optionally display an error message to the user
+      if (error.response && error.response.data && error.response.data.errors) {
+        setErrors(error.response.data.errors);
+      } else {
+        setErrorMessage("Failed to update student. Please try again.");
+        console.error("Error updating student:", error);
+      }
     }
   };
 
   return (
-    <PageContainer>
-      <FormContainer>
-        <Title>Edit Student</Title>
-        <form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="studentId">Student ID</Label>
-            <Input
-              type="text"
-              id="studentId"
-              name="studentId"
-              value={student.studentId}
-              onChange={handleChange}
-              readOnly
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="firstName">First Name</Label>
-            <Input
-              type="text"
-              id="firstName"
-              name="firstName"
-              value={student.firstName}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="lastName">Last Name</Label>
-            <Input
-              type="text"
-              id="lastName"
-              name="lastName"
-              value={student.lastName}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              type="email"
-              id="email"
-              name="email"
-              value={student.email}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="department">Department (Optional)</Label>
-            <Input
-              type="text"
-              id="department"
-              name="department"
-              value={student.department}
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="enrollmentYear">Enrollment Year</Label>
-            <Input
-              type="number"
-              id="enrollmentYear"
-              name="enrollmentYear"
-              value={student.enrollmentYear}
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="dateOfBirth">Date of Birth (YYYY-MM-DD)</Label>
-            <Input
-              type="date"
-              id="dateOfBirth"
-              name="dateOfBirth"
-              value={
-                student.dateOfBirth ? student.dateOfBirth.substring(0, 10) : ""
-              }
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="isActive">Active</Label>
-            <Input
-              type="checkbox"
-              id="isActive"
-              name="isActive"
-              checked={student.isActive}
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <Button type="submit">Update Student</Button>
-        </form>
-      </FormContainer>
-    </PageContainer>
+    <Container>
+      <Title>Edit Student</Title>
+      {successMessage && <SuccessMessage>{successMessage}</SuccessMessage>}
+      {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
+      <Form onSubmit={handleSubmit}>
+        <Label htmlFor="name">Name:</Label>
+        <Input
+          type="text"
+          id="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+
+        <Label htmlFor="email">Email:</Label>
+        <Input
+          type="email"
+          id="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+
+        <Label htmlFor="phone">Phone:</Label>
+        <Input
+          type="text"
+          id="phone"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
+        {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
+
+        <Button type="submit">Update Student</Button>
+      </Form>
+      <BackLink to="/students">Back to Student List</BackLink>
+    </Container>
   );
 };
 

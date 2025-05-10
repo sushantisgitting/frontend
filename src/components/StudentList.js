@@ -1,89 +1,101 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
-import { Link } from "react-router-dom";
 
-const PageContainer = styled.div`
-  padding: 40px;
-  background-color: #f8f8f8;
-  min-height: calc(100vh - 60px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+const Container = styled.div`
+  max-width: 800px;
+  margin: 50px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 `;
 
 const Title = styled.h2`
-  margin-bottom: 30px;
+  text-align: center;
+  margin-bottom: 20px;
   color: #333;
-  font-size: 2em;
-`;
-
-const AddStudentButton = styled(Link)`
-  background-color: #28a745;
-  color: white;
-  padding: 12px 25px;
-  border: none;
-  border-radius: 8px;
-  text-decoration: none;
-  margin-bottom: 30px;
-  display: inline-block;
-  font-size: 1em;
-
-  &:hover {
-    background-color: #1e7e34;
-  }
 `;
 
 const Table = styled.table`
-  width: 80%;
+  width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
-  background-color: white;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  overflow: hidden;
 `;
 
-const TableHead = styled.thead`
-  background-color: #007bff;
-  color: white;
-`;
-
-const TableHeader = styled.th`
-  padding: 15px;
+const Th = styled.th`
+  background-color: #f2f2f2;
+  padding: 10px;
   text-align: left;
-  font-weight: bold;
-`;
-
-const TableRow = styled.tr`
-  &:nth-child(even) {
-    background-color: #f2f2f2;
-  }
-`;
-
-const TableCell = styled.td`
-  padding: 15px;
   border-bottom: 1px solid #ddd;
 `;
 
-const ActionButton = styled.button`
-  background-color: ${(props) => (props.delete ? "#dc3545" : "#ffc107")};
-  color: white;
+const Td = styled.td`
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+`;
+
+const ActionButton = styled(Link)`
+  padding: 8px 12px;
+  margin-right: 5px;
   border: none;
-  padding: 10px 15px;
-  margin-right: 10px;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9em;
+  text-decoration: none;
+  font-size: 14px;
+
+  &.edit {
+    background-color: #007bff;
+    color: white;
+  }
+
+  &.delete {
+    background-color: #dc3545;
+    color: white;
+  }
 
   &:hover {
     opacity: 0.8;
   }
 `;
 
+const DeleteButton = styled.button`
+  padding: 8px 12px;
+  margin-right: 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #dc3545;
+  color: white;
+  font-size: 14px;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
+const AddNewButton = styled(Link)`
+  display: block;
+  margin-top: 20px;
+  padding: 10px 15px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  font-size: 16px;
+
+  &:hover {
+    background-color: #1e7e34;
+  }
+`;
+
 const StudentList = () => {
   const [students, setStudents] = useState([]);
-  const backendURL = "https://wt-assignment-2-3aes.onrender.com";
+  const backendURL = process.env.REACT_APP_BACKEND_URL; // Get the backend URL
 
   useEffect(() => {
     fetchStudents();
@@ -91,7 +103,7 @@ const StudentList = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get(`${backendURL}/api/students`);
+      const response = await axios.get(`${backendURL}/api/students`); // Use the environment variable
       setStudents(response.data);
     } catch (error) {
       console.error("Error fetching students:", error);
@@ -101,7 +113,7 @@ const StudentList = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this student?")) {
       try {
-        await axios.delete(`${backendURL}/api/students/${id}`);
+        await axios.delete(`${backendURL}/api/students/${id}`); // Use the environment variable
         fetchStudents();
       } catch (error) {
         console.error("Error deleting student:", error);
@@ -110,48 +122,40 @@ const StudentList = () => {
   };
 
   return (
-    <PageContainer>
+    <Container>
       <Title>Student List</Title>
-      <AddStudentButton to="/add">Add New Student</AddStudentButton>
-      {students.length > 0 ? (
-        <Table>
-          <TableHead>
-            <tr>
-              <TableHeader>ID</TableHeader>
-              <TableHeader>Name</TableHeader>
-              <TableHeader>Email</TableHeader>
-              <TableHeader>Year</TableHeader>
-              <TableHeader>Actions</TableHeader>
+      <Table>
+        <thead>
+          <tr>
+            <Th>Name</Th>
+            <Th>Email</Th>
+            <Th>Phone</Th>
+            <Th>Actions</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {students.map((student) => (
+            <tr key={student._id}>
+              <Td>{student.name}</Td>
+              <Td>{student.email}</Td>
+              <Td>{student.phone}</Td>
+              <Td>
+                <ActionButton to={`/edit/${student._id}`} className="edit">
+                  Edit
+                </ActionButton>
+                <DeleteButton
+                  onClick={() => handleDelete(student._id)}
+                  className="delete"
+                >
+                  Delete
+                </DeleteButton>
+              </Td>
             </tr>
-          </TableHead>
-          <tbody>
-            {students.map((student) => (
-              <TableRow key={student._id}>
-                <TableCell>{student.studentId}</TableCell>
-                <TableCell>
-                  {student.firstName} {student.lastName}
-                </TableCell>
-                <TableCell>{student.email}</TableCell>
-                <TableCell>{student.enrollmentYear}</TableCell>
-                <TableCell>
-                  <ActionButton as={Link} to={`/edit/${student._id}`}>
-                    Edit
-                  </ActionButton>
-                  <ActionButton
-                    delete
-                    onClick={() => handleDelete(student._id)}
-                  >
-                    Delete
-                  </ActionButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </tbody>
-        </Table>
-      ) : (
-        <p>No students found.</p>
-      )}
-    </PageContainer>
+          ))}
+        </tbody>
+      </Table>
+      <AddNewButton to="/add">Add New Student</AddNewButton>
+    </Container>
   );
 };
 
