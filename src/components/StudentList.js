@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react"; // Import useCallback
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
@@ -95,25 +95,26 @@ const AddNewButton = styled(Link)`
 
 const StudentList = () => {
   const [students, setStudents] = useState([]);
-  const backendURL = process.env.REACT_APP_BACKEND_URL; // Get the backend URL
+  const backendURL = process.env.REACT_APP_BACKEND_URL;
 
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-
-  const fetchStudents = async () => {
+  // Use useCallback to memoize fetchStudents
+  const fetchStudents = useCallback(async () => {
     try {
-      const response = await axios.get(`${backendURL}/api/students`); // Use the environment variable
+      const response = await axios.get(`${backendURL}/api/students`);
       setStudents(response.data);
     } catch (error) {
       console.error("Error fetching students:", error);
     }
-  };
+  }, [backendURL]); // Add backendURL as a dependency
+
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]); // Now fetchStudents is in the dependency array
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this student?")) {
       try {
-        await axios.delete(`${backendURL}/api/students/${id}`); // Use the environment variable
+        await axios.delete(`${backendURL}/api/students/${id}`);
         fetchStudents();
       } catch (error) {
         console.error("Error deleting student:", error);

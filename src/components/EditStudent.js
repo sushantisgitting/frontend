@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react"; // Import useCallback
 import { Link, useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
@@ -83,16 +83,13 @@ const EditStudent = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
   const { id } = useParams();
-  const backendURL = process.env.REACT_APP_BACKEND_URL; // Get the backend URL
+  const backendURL = process.env.REACT_APP_BACKEND_URL;
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    fetchStudent();
-  }, [id]);
-
-  const fetchStudent = async () => {
+  // Use useCallback to memoize fetchStudent
+  const fetchStudent = useCallback(async () => {
     try {
-      const response = await axios.get(`${backendURL}/api/students/${id}`); // Use the environment variable
+      const response = await axios.get(`${backendURL}/api/students/${id}`);
       const { name, email, phone } = response.data;
       setName(name);
       setEmail(email);
@@ -101,7 +98,11 @@ const EditStudent = () => {
       setErrorMessage("Error fetching student details.");
       console.error("Error fetching student:", error);
     }
-  };
+  }, [backendURL, id]); // Add backendURL and id as dependencies
+
+  useEffect(() => {
+    fetchStudent();
+  }, [fetchStudent]); // Now fetchStudent is in the dependency array
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,7 +112,7 @@ const EditStudent = () => {
     const updatedStudent = { name, email, phone };
 
     try {
-      await axios.put(`${backendURL}/api/students/${id}`, updatedStudent); // Use the environment variable
+      await axios.put(`${backendURL}/api/students/${id}`, updatedStudent);
       setSuccessMessage("Student updated successfully!");
       setTimeout(() => navigate("/students"), 1500);
     } catch (error) {

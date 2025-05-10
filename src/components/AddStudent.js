@@ -93,10 +93,7 @@ const AddStudent = () => {
     const newStudent = { name, email, phone };
 
     try {
-      const response = await axios.post(
-        `${backendURL}/api/students`,
-        newStudent
-      ); // Use the environment variable
+      await axios.post(`${backendURL}/api/students`, newStudent); // Use the environment variable
       setSuccessMessage("Student added successfully!");
       setName("");
       setEmail("");
